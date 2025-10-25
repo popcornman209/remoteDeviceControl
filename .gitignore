@@ -1,0 +1,10 @@
+# Build artifacts
+client/target/
+client/debug/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Local config with secrets
+config.json
