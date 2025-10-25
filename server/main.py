@@ -1,6 +1,8 @@
 from websockets.asyncio.server import serve
-import asyncio, json, ssl, pathlib
+import asyncio, json, os, shutil
 
+if not os.path.exists("config.json"):
+    shutil.copyfile("config.default.json", "config.json")
 with open("config.json", "r") as f:
     config = json.load(f)
 

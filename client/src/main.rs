@@ -1,6 +1,7 @@
 use tungstenite::{connect, Message, Error as WsError};
 use std::{thread, time::Duration};
-mod error;
+mod error_handler;
+use std::panic;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -27,6 +28,7 @@ fn main() {
     let json_str = raw.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
     
     let config: Config = serde_json::from_str(&json_str).expect("Invalid JSON in config");
+    error_handler::init_panic_hook(); // catch panics
 
     loop {  // Main reconnection loop
         println!("Attempting to connect...");
@@ -39,29 +41,30 @@ fn main() {
                 for (ref header, _value) in response.headers() {
                     println!("* {}", header);
                 }
+
+                main_loop(socket);
                 
                 // Run main_loop and catch panics so we can handle them centrally.
-                let run_res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    main_loop(socket)
-                }));
+                // let run_res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                //     main_loop(socket)
+                // }));
 
-                match run_res {
-                    // main_loop completed normally (Ok(Ok(_))) or returned an error (Ok(Err(e)))
-                    Ok(Ok(_)) => {
-                        // Normal exit - break or continue depending on desired behavior
-                        break;
-                    }
-                    Ok(Err(e)) => {
-                        // A tungstenite error occurred; handle it
-                        error::handle_error(e);
-                    }
-                    Err(payload) => {
-                        // A panic occurred inside main_loop or code it called (e.g. test.rs)
-                        let msg = payload.downcast_ref::<&str>().map(|s| *s)
-                            .or_else(|| payload.downcast_ref::<String>().map(|s| s.as_str()));
-                        error::handle_panic_info(msg, &config.discord_webhook);
-                    }
-                }
+                // match run_res {
+                //     // main_loop completed normally (Ok(Ok(_))) or returned an error (Ok(Err(e)))
+                //     Ok(Ok(_)) => {
+                //         // Normal exit - break or continue depending on desired behavior
+                //         break;
+                //     }
+                //     Ok(Err(e)) => {
+                //         error::handle_tungstenite(e);// A tungstenite error occurred; handle it
+                //     }
+                //     Err(payload) => {
+                //         // A panic occurred inside main_loop or code it called (e.g. test.rs)
+                //         let msg = payload.downcast_ref::<&str>().map(|s| *s)
+                //             .or_else(|| payload.downcast_ref::<String>().map(|s| s.as_str()));
+                //         error::handle_panic(msg, &config.discord_webhook);
+                //     }
+                // }
             }
             Err(e) => {
                 println!("Failed to connect: {}", e);

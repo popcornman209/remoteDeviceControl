@@ -1,8 +1,18 @@
 use std::fs;
+use std::path::Path;
 
 fn main() {
     println!("cargo:rerun-if-changed=config.json");
     println!("cargo:rerun-if-changed=config.default.json");
+
+    let config_path = Path::new("config.json");
+    let default_path = Path::new("config.default.json");
+
+    if !config_path.exists() {
+        if let Err(e) = fs::copy(default_path, config_path) {
+            panic!("Failed to create config.json from default: {}", e);
+        }
+    }
 
     let contents = fs::read_to_string("config.json")
         .or_else(|_| fs::read_to_string("config.default.json"))
