@@ -10,9 +10,6 @@ struct Config {
     websocket_url: String,
 }
 
-mod test;
-use test::test;
-
 fn main() {
     let raw = std::env::var("APP_CONFIG").expect("APP_CONFIG missing");
     let json_str = raw.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
@@ -37,16 +34,13 @@ fn main() {
 fn connect_to_ws(websocket_url: &str) -> Result<(), WsError> {
     match connect(websocket_url) {
         Ok((socket, response)) => {
-            println!("Connected to the server");
-            println!("Response HTTP code: {}", response.status());
-            println!("Response contains the following headers:");
-            for (ref header, _value) in response.headers() {
-                println!("* {}", header);
+            println!("Connected to the server!");
+            println!("Response HTTP code: {}\n", response.status());
+
+            match main_loop(socket) {
+                Ok(()) => { Ok(()) }
+                Err(e) => { Err(e) }
             }
-
-            main_loop(socket);
-
-            Ok(())
         }
         Err(e) => {
             Err(e)
@@ -54,10 +48,10 @@ fn connect_to_ws(websocket_url: &str) -> Result<(), WsError> {
     }
 }
 
-fn main_loop(mut socket: tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>) {
-    socket.send(Message::Text("Hello, Test!".into())).expect("failed to send message");
-    test();
+fn main_loop(mut socket: tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>) -> Result<(), WsError>{
+    socket.send(Message::Text("Hello, Test!".into()))?;
     loop {
-        println!("Received: {}", socket.read().expect("failed to recieve message"));
+        println!("Received: {}", socket.read()?);
+        socket.send(Message::Text("Hello, Test!".into()))?;
     }
 }

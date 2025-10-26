@@ -18,9 +18,13 @@ pub fn handle_tungstenite(e: WsError) -> bool {  // returns true to reconnect
             println!("URL Error, {}", url);
             true
         }
+        WsError::Protocol(protocol) => {
+            println!("Protocol Error, {}", protocol);
+            true
+        }
         _ => {
             println!("Error: {}", e);
-            false
+            true
         }
     }
 }
@@ -51,7 +55,7 @@ pub fn init_panic_hook(discord_webhook: String, discord_ping: String) {
             "Error: {}\n\
              Location: {}\n\
              Device: {}",
-            location, error_message, device
+            error_message, location, device
         );
         println!("===================== RUST PANIC DETECTED ====================\n{}\n=========================================================", message);
         
