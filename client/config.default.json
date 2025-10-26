@@ -1,5 +1,6 @@
 {
     "websocket_url": "ws://127.0.0.1:42069/websocket",
     "discord_webhook": "",
+    "discord_ping": "",
     "reconnect_delay": 30
 }

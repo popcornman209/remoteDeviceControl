@@ -1,7 +1,6 @@
 use tungstenite::Error as WsError;
-use std::time::{SystemTime, UNIX_EPOCH};
 use serde_json::json;
-use ureq;
+use reqwest::blocking::Client;
 use whoami;
 use std::panic;
 
@@ -15,35 +14,58 @@ pub fn handle_tungstenite(e: WsError) -> bool {  // returns true to reconnect
             println!("Connection was already closed, reconnecting...");
             true
         }
-        WsError::Protocol(_) => {
-            println!("Protocol error, reconnecting...");
+        WsError::Url(url) => {
+            println!("URL Error, {}", url);
             true
         }
         _ => {
             println!("Error: {}", e);
-            true
+            false
         }
     }
 }
 
-pub fn init_panic_hook() {
-    panic::set_hook(Box::new(|info| {
-        if let Some(location) = info.location() {
-            eprintln!(
-                "Panic occurred at {}:{} — {}",
-                location.file(),
-                location.line(),
-                info.payload()
-                    .downcast_ref::<&str>()
-                    .unwrap_or(&"Unknown panic message"),
-            );
-        } else {
-            eprintln!("Panic occurred (no location info available)");
+pub fn init_panic_hook(discord_webhook: String, discord_ping: String) {
+    panic::set_hook(Box::new(move |info| {
+        let location = info.location().map_or_else(
+            || "unknown".to_string(), // fallback if location is None
+            |loc| format!("{}:{}", loc.file(), loc.line()),
+        );
+
+        let device = format!(
+            "{}@{} (os: {})",
+            whoami::username(),
+            whoami::fallible::hostname().unwrap_or_else(|_| String::from("unknown")),
+            whoami::platform()
+        );
+
+        let error_message = match info.payload().downcast_ref::<&str>() {
+            Some(s) => *s,
+            None => match info.payload().downcast_ref::<String>() {
+                Some(s) => s.as_str(),
+                None => "Box<Any>",
+            },
+        };
+
+        let message = format!(
+            "Error: {}\n\
+             Location: {}\n\
+             Device: {}",
+            location, error_message, device
+        );
+        println!("===================== RUST PANIC DETECTED ====================\n{}\n=========================================================", message);
+        
+        if !discord_webhook.is_empty() {
+            let _ = Client::new()
+                .post(&discord_webhook)
+                .json(&json!({ "content": format!("Rust panic !!!!! {}\n```{}```", discord_ping, message) }))
+                .send();
         }
+
     }));
 }
 
-// Called for panics caught via `catch_unwind` or from a panic hook.
+// Called for panics caught via `catch_unwind` or from a panic hook. "content": format!("Rust panic !!!!!\n```{}```"
 // #[track_caller]
 // pub fn handle_panic(msg: Option<&str>, discord_webhook: &str) {
 //     unsafe {
