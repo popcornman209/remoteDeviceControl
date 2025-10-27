@@ -1,6 +1,6 @@
 use tungstenite::{connect, Message, Error as WsError};
 use std::{thread, time::Duration};
-use serde_json::{Value, json};
+use serde_json::{json};
 mod error_handler;
 use whoami;
 use serde::Deserialize;
@@ -40,6 +40,7 @@ fn connect_to_ws(websocket_url: &str) -> Result<(), WsError> {
             println!("Response HTTP code: {}\n", response.status());
 
             let message = json!({
+                "type": "client",
                 "name": whoami::username(),
                 "host": whoami::fallible::hostname().unwrap_or_else(|_| String::from("unknown")),
                 "features": [ ] // list of things it can do
@@ -59,9 +60,7 @@ fn connect_to_ws(websocket_url: &str) -> Result<(), WsError> {
 }
 
 fn main_loop(mut socket: tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>) -> Result<(), WsError>{
-    socket.send(Message::Text("Hello, Test!".into()))?;
     loop {
         println!("Received: {}", socket.read()?);
-        socket.send(Message::Text("Hello, Test!".into()))?;
     }
 }

@@ -1,5 +1,6 @@
 {
     "discord_webhook": "",
     "discord_ping": "",
-    "port": 42069
+    "port": 42069,
+    "password": ""
 }
