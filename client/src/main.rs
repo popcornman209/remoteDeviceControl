@@ -1,6 +1,8 @@
 use tungstenite::{connect, Message, Error as WsError};
 use std::{thread, time::Duration};
+use serde_json::{Value, json};
 mod error_handler;
+use whoami;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -33,9 +35,17 @@ fn main() {
 
 fn connect_to_ws(websocket_url: &str) -> Result<(), WsError> {
     match connect(websocket_url) {
-        Ok((socket, response)) => {
+        Ok((mut socket, response)) => {
             println!("Connected to the server!");
             println!("Response HTTP code: {}\n", response.status());
+
+            let message = json!({
+                "name": whoami::username(),
+                "host": whoami::fallible::hostname().unwrap_or_else(|_| String::from("unknown")),
+                "features": [ ] // list of things it can do
+            }).to_string();
+
+            socket.send(Message::Text(message.into()))?;
 
             match main_loop(socket) {
                 Ok(()) => { Ok(()) }

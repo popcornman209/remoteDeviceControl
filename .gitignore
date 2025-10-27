@@ -6,5 +6,7 @@ client/debug/
 .vscode/
 .idea/
 
+.venv/
+
 # Local config with secrets
 config.json
