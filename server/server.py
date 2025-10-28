@@ -58,12 +58,23 @@ class conrollerObj():
             message = json.loads(await self.ws.recv())
 
             if message["command"] == "getClients":
-                clients = [{"name": f"{client.name}@{client.host}", "id":client.clientID} for client in clientList if client != None]
+                clients = [{"name": f"{client.name}@{client.host}", "id":client.clientID, "ip": client.ws.remote_address} for client in clientList if client != None]
                 await self.ws.send(json.dumps(clients))
+
+            if message["command"] == "getClient":
+                clientID = message["id"]
+                client = clientList[clientID]
+                await self.ws.send(json.dumps({
+                    "name": client.name,
+                    "host": client.host,
+                    "ip": client.ws.remote_address,
+                    "features": client.features
+                }))
 
 
 # main hanlder for clients
 async def handler(websocket):
+    addr = websocket.remote_address
     try:
         clientInfo = json.loads(await websocket.recv())
         if clientInfo.get("type") == "client":
@@ -81,9 +92,9 @@ async def handler(websocket):
         
     except Exception as e:
         if type(e) in ignoredErrors:
-            print(f"Ignored error: {e}")
+            print(f"Ignored error: {e} (IP: {addr})")
             return
-        message = f"Error: {e}\n\n{traceback.format_exc()}"
+        message = f"IP: {addr}\nError: {e}\n\n{traceback.format_exc()}"
         print(f"==========Error==========\n{message}\n=========================")
         if config["discord_webhook"] != "":
             webhook = DiscordWebhook(url=config["discord_webhook"], content=f"Server Error! {config["discord_ping"] if type(e) not in unImportantErrors else "(unimportant)"}\n```\n{message}\n```")

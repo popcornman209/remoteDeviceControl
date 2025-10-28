@@ -1,0 +1,6 @@
+ListItem {
+    margin: 1 1;
+}
+ListView {
+    background: $background;
+}

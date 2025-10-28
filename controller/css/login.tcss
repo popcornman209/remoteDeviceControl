@@ -1,0 +1,13 @@
+Screen {
+    align: center middle;
+}
+
+Label {
+    padding: 1 2;
+    width: 30;
+}
+Input {
+    width: 30;
+    height: auto;
+    margin: 2 2;
+}
