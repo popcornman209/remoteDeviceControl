@@ -20,3 +20,12 @@ class ws:
         self.ws.send(json.dumps({"command":"getClient","id":clientID}))
         clientInfo = json.loads(self.ws.recv())
         return clientInfo
+
+    def sendClientCommand(self, clientID, command, args={}):
+        self.ws.send(json.dumps({
+            "command":"clientCommand",
+            "id": clientID,
+            "clientCommand": command,
+            "args": args
+        }))
+        return json.loads(self.ws.recv())

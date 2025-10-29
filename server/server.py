@@ -49,7 +49,7 @@ class conrollerObj():
     def __init__(self, ws):
         self.ws = ws
 
-        self.controllerID = len(clientList)
+        self.controllerID = len(controllerList)
         controllerList.append(self)
         print(f"Controller connected: {ws.remote_address}")
     
@@ -70,15 +70,34 @@ class conrollerObj():
                     "ip": client.ws.remote_address,
                     "features": client.features
                 }))
+            
+            if message["command"] == "clientCommand":
+                clientID = message["id"]
+                command = message["clientCommand"]
+                args = message["args"] if "args" in message else {}
+                client = clientList[clientID]
+                while client.busy:
+                    await asyncio.sleep(0.1)
+                client.busy = True
+                await client.ws.send(json.dumps({
+                    "type": "clientCommand",
+                    "command": command,
+                    "args": args
+                }))
+                result = await client.ws.recv()
+                client.busy = False
+                await self.ws.send(json.dumps(result))
 
 
 # main hanlder for clients
 async def handler(websocket):
     addr = websocket.remote_address
+    disconnectID = None
     try:
         clientInfo = json.loads(await websocket.recv())
         if clientInfo.get("type") == "client":
             client = clientObj(clientInfo.get("name"), clientInfo.get("host"), clientInfo.get("features"), websocket)
+            disconnectID = {"type":"client","id":client.clientID}
             await client.mainLoop()
 
         if clientInfo.get("type") == "controller":
@@ -87,10 +106,18 @@ async def handler(websocket):
                 await websocket.close()
                 return
             controller = conrollerObj(websocket)
+            disconnectID = {"type":"controller","id":controller.controllerID}
             await websocket.send("connected: Hello!")
             await controller.mainLoop()
         
     except Exception as e:
+        if disconnectID != None:
+            if disconnectID["type"] == "client":
+                clientList[disconnectID["id"]] = None
+                print(f"Client disconnected: ID {disconnectID['id']} (IP: {addr})")
+            if disconnectID["type"] == "controller":
+                controllerList[disconnectID["id"]] = None
+                print(f"Controller disconnected: ID {disconnectID['id']} (IP: {addr})")
         if type(e) in ignoredErrors:
             print(f"Ignored error: {e} (IP: {addr})")
             return

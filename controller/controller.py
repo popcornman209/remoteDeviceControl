@@ -2,14 +2,12 @@ from textual.app import App, ComposeResult
 from textual.screen import Screen
 from textual.binding import Binding
 from textual import events, widgets
-import hashlib, json, lib.ws, os, shutil
+import hashlib, json, lib.ws, os, shutil, lib.features
 
 if not os.path.exists("config.json"):
     shutil.copyfile("config.default.json", "config.json")
 with open("config.json", "r") as f:
     config = json.load(f)
-
-websocket = lib.ws.ws(config["websocket_url"])
 
 class LoginScreen(Screen):
     CSS_PATH = "css/login.tcss"
@@ -29,7 +27,7 @@ class LoginScreen(Screen):
     def on_input_submitted(self, event: widgets.Input.Submitted) -> None:
         password = event.value
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        if websocket.connect(hashed_password):
+        if self.app.websocket.connect(hashed_password):
             self.app.push_screen("welcome")
         else:
             self.app.exit("Incorrect password.")
@@ -63,7 +61,7 @@ class ClientList(Screen):
 
     def refresh_clients(self):
         self.listView.clear()
-        clients = websocket.getClients()  # returns list of dicts
+        clients = self.app.websocket.getClients()  # returns list of dicts
         for client in clients:
             item = widgets.ListItem(widgets.Label(f"{client['id']}: {client['name']} {client['ip'][0]}:{client['ip'][1]}"))
             item.clientID = client['id']
@@ -99,11 +97,16 @@ class ClientInfo(Screen):
     
     def refresh_info(self):
         self.featuresList.clear()
-        client = websocket.getClient(self.app.clientID)  # returns dict
+        client = self.app.websocket.getClient(self.app.clientID)  # returns dict
         self.infoLabel.update(f"ID: {self.app.clientID}\nName: {client['name']}\nHostname: {client['host']}\nIP: {client['ip'][0]}:{client['ip'][1]}")
         for feature in client['features']:
             item = widgets.ListItem(widgets.Label(f"{feature[0]}"))
+            item.feature = feature
             self.featuresList.append(item)
+    
+    def on_list_view_selected(self, event: widgets.ListView.Selected) -> None:
+        selected_item = event.item
+        self.app.push_screen(selected_item.feature[1])
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "r":
@@ -114,10 +117,14 @@ class ClientInfo(Screen):
 
 class MainApp(App):
     def on_mount(self) -> None:
+        self.websocket = lib.ws.ws(config["websocket_url"])
         self.theme = "catppuccin-mocha"
         self.install_screen(LoginScreen(), name="login")
         self.install_screen(ClientList(), name="welcome")
         self.install_screen(ClientInfo(), name="clientInfo")
+
+        self.install_screen(lib.features.FileExplorer, name="fileExplorer")
+
         self.push_screen("login")
 
 

