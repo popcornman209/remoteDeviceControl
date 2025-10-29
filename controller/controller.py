@@ -55,6 +55,7 @@ class ClientList(Screen):
 
     def on_mount(self) -> None:
         self.title = "Clients"
+        self.notify("Connected to server.", timeout=2)
 
     def on_screen_resume(self) -> None:
         self.refresh_clients()
@@ -97,16 +98,20 @@ class ClientInfo(Screen):
     
     def refresh_info(self):
         self.featuresList.clear()
-        client = self.app.websocket.getClient(self.app.clientID)  # returns dict
-        self.infoLabel.update(f"ID: {self.app.clientID}\nName: {client['name']}\nHostname: {client['host']}\nIP: {client['ip'][0]}:{client['ip'][1]}")
-        for feature in client['features']:
+        self.clientDict = self.app.websocket.getClient(self.app.clientID)  # returns dict
+        self.infoLabel.update(f"ID: {self.app.clientID}\nName: {self.clientDict['name']}\nHostname: {self.clientDict['host']}\nIP: {self.clientDict['ip'][0]}:{self.clientDict['ip'][1]}\nBusy: {self.clientDict['busy']}")
+        for feature in self.clientDict['features']:
             item = widgets.ListItem(widgets.Label(f"{feature[0]}"))
             item.feature = feature
             self.featuresList.append(item)
     
     def on_list_view_selected(self, event: widgets.ListView.Selected) -> None:
         selected_item = event.item
-        self.app.push_screen(selected_item.feature[1])
+        self.refresh_info()
+        if self.clientDict["busy"]:
+            self.notify("Client is busy!", severity="error", timeout=10)
+        else:
+            self.app.push_screen(selected_item.feature[1])
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "r":

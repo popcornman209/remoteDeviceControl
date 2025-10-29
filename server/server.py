@@ -33,7 +33,7 @@ class clientObj():
         self.name = name
         self.host = host
         self.features = features
-        self.busy = False
+        self.busy = None
         self.ws = ws
 
         self.clientID = len(clientList)
@@ -42,8 +42,10 @@ class clientObj():
     
     async def mainLoop(self):
         while True:
-            message = await self.ws.recv()
-            print(f"Message from {self.name}@{self.host}: {message}")
+            message = json.loads(await self.ws.recv())
+            if message["command"] == "clientCommandResult":
+                await self.busy.ws.send(json.dumps(message))
+                self.busy = None
 
 class conrollerObj():
     def __init__(self, ws):
@@ -56,7 +58,7 @@ class conrollerObj():
     async def mainLoop(self):
         while True:
             message = json.loads(await self.ws.recv())
-
+            
             if message["command"] == "getClients":
                 clients = [{"name": f"{client.name}@{client.host}", "id":client.clientID, "ip": client.ws.remote_address} for client in clientList if client != None]
                 await self.ws.send(json.dumps(clients))
@@ -68,7 +70,8 @@ class conrollerObj():
                     "name": client.name,
                     "host": client.host,
                     "ip": client.ws.remote_address,
-                    "features": client.features
+                    "features": client.features,
+                    "busy": client.busy != None
                 }))
             
             if message["command"] == "clientCommand":
@@ -76,17 +79,14 @@ class conrollerObj():
                 command = message["clientCommand"]
                 args = message["args"] if "args" in message else {}
                 client = clientList[clientID]
-                while client.busy:
+                while client.busy != None:
                     await asyncio.sleep(0.1)
-                client.busy = True
+                client.busy = self
                 await client.ws.send(json.dumps({
                     "type": "clientCommand",
                     "command": command,
                     "args": args
                 }))
-                result = await client.ws.recv()
-                client.busy = False
-                await self.ws.send(json.dumps(result))
 
 
 # main hanlder for clients

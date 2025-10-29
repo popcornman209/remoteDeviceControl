@@ -49,6 +49,7 @@ fn get_folder(folder: &str) -> Value {
                 .collect();
 
             json!({
+                "command": "clientCommandResult",
                 "error": "",
                 "items": items,
                 "folder": folder
