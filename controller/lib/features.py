@@ -8,6 +8,7 @@ import hashlib, json, lib.ws, os, shutil, lib.features, pathlib, time
 class FileExplorer(Screen):
     CSS_PATH = "../css/fileExplorer.tcss"
     BINDINGS = [
+        Binding(key="r", action="", description="Reload folder"),
         Binding(key="󰌑 /󱁐", action="", description="Expand folder"),
         Binding(key="", action="", description="Open folder"),
         Binding(key="", action="", description="Parent folder"),

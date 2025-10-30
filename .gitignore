@@ -7,8 +7,8 @@ client/debug/
 .idea/
 
 .venv/
-server/venv/
-controller/venv/
+venv/
+__pycache__/
 
 # Local config with secrets
 config.json

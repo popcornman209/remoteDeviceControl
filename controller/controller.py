@@ -38,10 +38,10 @@ class LoginScreen(Screen):
 class ClientList(Screen):
     CSS_PATH = "css/clientList.tcss"
     BINDINGS = [
-        Binding(key="r", action="reload", description="Reload client list"),
-        Binding(key="", action="move", description="Move cursor"),
-        Binding(key="󰌑", action="select", description="Select a client"),
-        Binding(key="^q", action="quit", description="Quit the app"),
+        Binding(key="r", action="", description="Reload"),
+        Binding(key="", action="", description="Move cursor"),
+        Binding(key="󰌑", action="", description="Select client"),
+        Binding(key="^q", action="", description="Quit"),
     ]
 
     def on_list_view_selected(self, event: widgets.ListView.Selected) -> None:
@@ -78,11 +78,11 @@ class ClientList(Screen):
 class ClientInfo(Screen):
     CSS_PATH = "css/clientInfo.tcss"
     BINDINGS = [
-        Binding(key="r", action="reload", description="Reload client list"),
-        Binding(key="", action="move", description="Move cursor"),
-        Binding(key="󰌑", action="select", description="Select a client"),
-        Binding(key="Esc", action="back", description="Back to client list"),
-        Binding(key="^q", action="quit", description="Quit the app"),
+        Binding(key="r", action="", description="Reload"),
+        Binding(key="", action="", description="Move cursor"),
+        Binding(key="󰌑", action="", description="Select client"),
+        Binding(key="Esc", action="", description="Back"),
+        Binding(key="^q", action="", description="Quit"),
     ]
 
     def compose(self):
