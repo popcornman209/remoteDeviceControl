@@ -1,3 +1,4 @@
 {
-    "websocket_url": "ws://127.0.0.1:42069/websocket"
+    "websocket_url": "ws://127.0.0.1:42069/websocket",
+    "passwordSalt": "{}"
 }

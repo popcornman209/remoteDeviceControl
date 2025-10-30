@@ -28,7 +28,7 @@ class LoginScreen(Screen):
         self.title = "Login"
 
     def on_input_submitted(self, event: widgets.Input.Submitted) -> None:
-        password = event.value
+        password = config["passwordSalt"].format(event.value)
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
         if self.app.websocket.connect(hashed_password):
             self.app.push_screen("welcome")
