@@ -1,6 +1,7 @@
 # Build artifacts
 client/target/
 client/debug/
+target/
 
 # IDE settings
 .vscode/
