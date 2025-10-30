@@ -2,5 +2,6 @@
     "discord_webhook": "",
     "discord_ping": "",
     "port": 42069,
+    "passwordSalt": "{}",
     "password": ""
 }

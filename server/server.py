@@ -19,7 +19,7 @@ with open("config.json", "r") as f:
 if not config["password"]:
     print("No password set in config.json!, please input a password below, it will be eencrypted with sha256 and saved.")
     import getpass, hashlib
-    password = getpass.getpass("Password: ")
+    password = config["passwordSalt"].format(getpass.getpass("Password: "))
     config["password"] = hashlib.sha256(password.encode()).hexdigest()
     with open("config.json", "w") as f:
         json.dump(config, f, indent=4)
