@@ -38,6 +38,9 @@ class FileExplorer(Screen):
     def on_tree_node_expanded(self, event: widgets.Tree.NodeExpanded) -> None:
         folder = event.node
         result = self.fetchFolder(folder)
+        if result["error"]:
+            self.notify(f"Error: {result["error"]}", severity="error", timeout=10)
+            return
         folder.remove_children()
         if folder.is_root: folder.label = result["folder"]
         for file in sorted(result["items"], key=lambda x: x["name"].lower()):

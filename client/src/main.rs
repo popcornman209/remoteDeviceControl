@@ -14,7 +14,7 @@ struct Config {
 }
 
 fn main() {
-    let raw = std::env::var("APP_CONFIG").expect("APP_CONFIG missing");
+    let raw = env!("APP_CONFIG");
     let json_str = raw.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
     
     let config: Config = serde_json::from_str(&json_str).expect("Invalid JSON in config");

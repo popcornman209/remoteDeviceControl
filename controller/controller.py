@@ -112,7 +112,7 @@ class ClientInfo(Screen):
         selected_item = event.item
         self.refresh_info()
         if self.clientDict["busy"]:
-            self.notify("Client is busy!", severity="error", timeout=10)
+            self.notify("Client is busy!", severity="error", timeout=5)
         else:
             if selected_item.feature[1] in featureCommands:
                 self.app.push_screen(featureCommands[selected_item.feature[1]]["screenName"])
