@@ -13,7 +13,6 @@ pub fn run_command(message: &Value) -> Value {
                 .and_then(|f| f.as_str())
                 .unwrap_or("")
                 .to_string();
-            println!("Getting folder: {}", folder);
             get_folder(&folder)
         }
         _ => {
@@ -33,6 +32,7 @@ fn get_folder(folder: &str) -> Value {
     } else {
         folder.to_string()
     };
+    println!("Getting folder: {}", folder);
     match fs::read_dir(&folder) {
         Ok(entries) => {
             let items: Vec<Value> = entries
@@ -56,6 +56,7 @@ fn get_folder(folder: &str) -> Value {
             })
         }
         Err(err) => json!({
+            "command": "clientCommandResult",
             "error": err.to_string()
         }),
     }

@@ -1,18 +1,16 @@
 from textual.screen import Screen
-import lib.ws
-from textual.app import App, ComposeResult
+from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.binding import Binding
 from textual import events, widgets
-import hashlib, json, lib.ws, os, shutil, lib.features, pathlib
+import hashlib, json, lib.ws, os, shutil, lib.features, pathlib, time
 
 class FileExplorer(Screen):
-    #CSS_PATH = "css/fileExplorer.tcss"
+    CSS_PATH = "../css/fileExplorer.tcss"
     BINDINGS = [
-        Binding(key="r", action="reload", description="Reload file list"),
-        Binding(key="", action="move", description="Move cursor"),
-        Binding(key="󰌑", action="select", description="Select a file or folder"),
-        Binding(key="^q", action="quit", description="Quit the app"),
+        Binding(key="󰌑 /󱁐", action="", description="Expand folder"),
+        Binding(key="", action="", description="Open folder"),
+        Binding(key="", action="", description="Parent folder"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -25,25 +23,42 @@ class FileExplorer(Screen):
         self.title = "File Explorer"
     
     def on_screen_resume(self) -> None:
-        self.fileTree.root.remove_children()
         self.fileTree.root.label = ""
-        result = self.expandFolder(self.fileTree.root)
+        self.fileTree.root.expand()
 
     def fetchFolder(self, folder):
-        self.app.exit(str(folder.label))
-        result = self.app.websocket.sendClientCommand(self.app.clientID, "getFolder", {"folder": folder.label})
+        if folder.is_root:
+            path = str(folder.label)
+        else:
+            path = folder.globalPath
+        result = self.app.websocket.sendClientCommand(self.app.clientID, "getFolder", {"folder": path})
         return result
 
-    def expandFolder(self, folder) -> None:
+    def on_tree_node_expanded(self, event: widgets.Tree.NodeExpanded) -> None:
+        folder = event.node
         result = self.fetchFolder(folder)
         folder.remove_children()
-        folder.label = result["folder"]
-        for file in result["items"]:
+        if folder.is_root: folder.label = result["folder"]
+        for file in sorted(result["items"], key=lambda x: x["name"].lower()):
             if file["type"] == "folder":
                 node = folder.add(file["name"])
             else:
                 node = folder.add_leaf(file["name"])
             node.fileData = file
-            node.globalPath = result["folder"] + "/" + file["name"]
-        return result
-            
+            node.globalPath = str(pathlib.Path(result["folder"]) / file["name"])
+    
+    async def on_key(self, event: events.Key) -> None:
+        if event.key == "right":
+            node = self.fileTree.cursor_node
+            if not node.is_root and node.fileData["type"] == "folder":
+                self.fileTree.root.label = node.globalPath
+                self.fileTree.root.expand()
+        elif event.key == "left":
+            parentPath = str(pathlib.Path(str(self.fileTree.root.label)).parent)
+            self.fileTree.root.label = parentPath
+            self.fileTree.root.expand()
+
+
+featureList = [
+    {"screen": FileExplorer, "screenName": "fileExplorer", "command": "fileExplorer"},
+]

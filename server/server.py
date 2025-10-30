@@ -43,6 +43,9 @@ class clientObj():
     async def mainLoop(self):
         while True:
             message = json.loads(await self.ws.recv())
+            if "command" not in message:
+                print(f"Unknown message from client {self.clientID}: {message}")
+                continue
             if message["command"] == "clientCommandResult":
                 await self.busy.ws.send(json.dumps(message))
                 self.busy = None
@@ -111,6 +114,7 @@ async def handler(websocket):
             await controller.mainLoop()
         
     except Exception as e:
+        websocket.close()
         if disconnectID != None:
             if disconnectID["type"] == "client":
                 clientList[disconnectID["id"]] = None
@@ -128,7 +132,7 @@ async def handler(websocket):
             webhook.execute()
 
 async def main():
-    async with serve(handler, "", config["port"], compression=None):
+    async with serve(handler, "", config["port"], compression=None, ping_timeout=None):
         await asyncio.Future()
 
 if __name__ == "__main__": asyncio.run(main())

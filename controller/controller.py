@@ -4,6 +4,9 @@ from textual.binding import Binding
 from textual import events, widgets
 import hashlib, json, lib.ws, os, shutil, lib.features
 
+featureList = lib.features.featureList
+featureCommands = {f["command"]: f for f in featureList}
+
 if not os.path.exists("config.json"):
     shutil.copyfile("config.default.json", "config.json")
 with open("config.json", "r") as f:
@@ -36,7 +39,7 @@ class ClientList(Screen):
     CSS_PATH = "css/clientList.tcss"
     BINDINGS = [
         Binding(key="r", action="reload", description="Reload client list"),
-        Binding(key="", action="move", description="Move cursor"),
+        Binding(key="", action="move", description="Move cursor"),
         Binding(key="󰌑", action="select", description="Select a client"),
         Binding(key="^q", action="quit", description="Quit the app"),
     ]
@@ -76,7 +79,7 @@ class ClientInfo(Screen):
     CSS_PATH = "css/clientInfo.tcss"
     BINDINGS = [
         Binding(key="r", action="reload", description="Reload client list"),
-        Binding(key="", action="move", description="Move cursor"),
+        Binding(key="", action="move", description="Move cursor"),
         Binding(key="󰌑", action="select", description="Select a client"),
         Binding(key="Esc", action="back", description="Back to client list"),
         Binding(key="^q", action="quit", description="Quit the app"),
@@ -101,7 +104,7 @@ class ClientInfo(Screen):
         self.clientDict = self.app.websocket.getClient(self.app.clientID)  # returns dict
         self.infoLabel.update(f"ID: {self.app.clientID}\nName: {self.clientDict['name']}\nHostname: {self.clientDict['host']}\nIP: {self.clientDict['ip'][0]}:{self.clientDict['ip'][1]}\nBusy: {self.clientDict['busy']}")
         for feature in self.clientDict['features']:
-            item = widgets.ListItem(widgets.Label(f"{feature[0]}"))
+            item = widgets.ListItem(widgets.Label(f"{"[Unknown?] " if feature[1] not in featureCommands else ""}{feature[0]}"))
             item.feature = feature
             self.featuresList.append(item)
     
@@ -111,7 +114,10 @@ class ClientInfo(Screen):
         if self.clientDict["busy"]:
             self.notify("Client is busy!", severity="error", timeout=10)
         else:
-            self.app.push_screen(selected_item.feature[1])
+            if selected_item.feature[1] in featureCommands:
+                self.app.push_screen(featureCommands[selected_item.feature[1]]["screenName"])
+            else:
+                self.notify("Feature not implemented in controller.", severity="error", timeout=10)
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "r":
@@ -128,7 +134,8 @@ class MainApp(App):
         self.install_screen(ClientList(), name="welcome")
         self.install_screen(ClientInfo(), name="clientInfo")
 
-        self.install_screen(lib.features.FileExplorer, name="fileExplorer")
+        for feature in featureList:
+            self.install_screen(feature["screen"], name=feature["screenName"])
 
         self.push_screen("login")
 
