@@ -4,9 +4,14 @@ use std::path::Path;
 
 fn main() {
     println!("cargo:rerun-if-changed=config.json");
+    println!("cargo:rerun-if-changed=configRelease.json");
     println!("cargo:rerun-if-changed=config.default.json");
 
-    let config_path = Path::new("config.json");
+    let config_path = if Ok("release".to_owned()) == env::var("PROFILE") {
+        Path::new("configRelease.json")
+    } else {
+        Path::new("config.json")
+    };
     let default_path = Path::new("config.default.json");
 
     if !config_path.exists() {
@@ -15,7 +20,7 @@ fn main() {
         }
     }
 
-    let contents = fs::read_to_string("config.json")
+    let contents = fs::read_to_string(config_path)
         .or_else(|_| fs::read_to_string("config.default.json"))
         .expect("Missing both config.json and config.default.json");
 

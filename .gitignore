@@ -13,3 +13,4 @@ __pycache__/
 
 # Local config with secrets
 config.json
+configRelease.json
