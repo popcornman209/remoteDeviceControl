@@ -15,7 +15,7 @@ with open("config.json", "r") as f:
 class LoginScreen(Screen):
     CSS_PATH = "css/login.tcss"
     BINDINGS = [
-        Binding(key="^q", action="quit", description="Quit the app"),
+        Binding(key="^q", action="quit", description="Quit"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -102,7 +102,13 @@ class ClientInfo(Screen):
     def refresh_info(self):
         self.featuresList.clear()
         self.clientDict = self.app.websocket.getClient(self.app.clientID)  # returns dict
-        self.infoLabel.update(f"ID: {self.app.clientID}\nName: {self.clientDict['name']}\nHostname: {self.clientDict['host']}\nIP: {self.clientDict['ip'][0]}:{self.clientDict['ip'][1]}\nBusy: {self.clientDict['busy']}")
+        self.infoLabel.update(f"""
+            ID: {self.app.clientID}
+            Name: {self.clientDict['name']}
+            Hostname: {self.clientDict['host']}
+            IP: {self.clientDict['ip'][0]}:{self.clientDict['ip'][1]}
+            Busy: {self.clientDict['busy']}
+        """)
         for feature in self.clientDict['features']:
             item = widgets.ListItem(widgets.Label(f"{"[Unknown?] " if feature[1] not in featureCommands else ""}{feature[0]}"))
             item.feature = feature

@@ -1,4 +1,5 @@
 use std::fs;
+use std::env;
 use std::path::Path;
 
 fn main() {
@@ -21,4 +22,5 @@ fn main() {
     // Escape newlines and quotes for embedding
     let escaped = contents.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n");
     println!("cargo:rustc-env=APP_CONFIG={}", escaped);
+    println!("cargo:rustc-env=BUILD_RELEASE={}", Ok("release".to_owned()) == env::var("PROFILE"));
 }
